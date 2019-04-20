@@ -17,4 +17,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('', 'StationController@search');
+Route::get('station/search', 'StationController@search');
+Route::get('route/search', 'RouteController@search');
+Route::get('route/{id}', 'RouteController@index');
