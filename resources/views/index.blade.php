@@ -31,7 +31,7 @@
                         <div class="fourteen wide column">
                             <div class="item">
                                 <div class="ui search start">
-                                    <div class="ui transparent left icon input">
+                                    <div class="ui transparent left icon fluid input">
                                         <input class="prompt" type="text" placeholder="Starting point" id="start">
                                         <i class="dot circle outline icon"></i>
                                         
@@ -42,7 +42,7 @@
                             </div>
                             <div class="item">
                                 <div class="ui search destination">
-                                    <div class="ui transparent left icon input">
+                                    <div class="ui transparent left icon fluid input">
                                         <input class="prompt" type="text" placeholder="Destination" id="destination">
                                         <i class="map marker alternate icon"></i>
                                         
@@ -66,7 +66,7 @@
             </div>
                 
         </div>
-        <div class="ui right vertical menu thin sidebar">
+        <div class="ui right vertical menu sidebar">
         </div>
         <div class="pusher">
             <div class="full height">
@@ -93,15 +93,19 @@
                     
                         
                     </div>
+                    
                         
                 </div>
-                
+                <div id="map" class=""></div>
+
             </div>
         </div>
 
 
         
         <script src="{{ URL::asset('js/javascript.js') }}"></script>
+
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBx7STG0PaXcrFVDiDqGsnr1AmMZcvf110&callback=initMap"></script>
     </body>
 
 </html>

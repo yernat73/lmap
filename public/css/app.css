@@ -10674,5 +10674,8 @@ a.text-dark:focus {
   left: -23px;
   z-index: 20;
 }
-
+#map {
+  height: 40rem; 
+  width: 100%;  
+ }
 

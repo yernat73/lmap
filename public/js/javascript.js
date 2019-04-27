@@ -71,58 +71,75 @@ $('.ui.search.destination')
       }
     }
   });
-  $.fn.search.settings.templates.routes = function(response) {
-    // do something with response
-    html = '';
-    $.each(response.data, function(index, item) {
-      html+= "<a class='result'><div class='content'><div class='title'><i class='bus icon'></i>  "+item.name+"</div></div></a>";
-    });
-     return html;
-   };
-
-  $('.ui.search.route')
-  .search({
-    apiSettings: {
-      url: 'http://map.test/api/route/search?q={query}'
-    },
-    fields: {
-      results : 'data',
-      title   : 'name',
-      url     : 'html_url'
-    },
-    minCharacters : 1,
-    onSelect: function(result, response){
-      
-      console.log(result);
-      $('#header').html("<i class='bus icon'></i>"+result.name);
-      var html = "";
-      $.each(result.stations, function(index, item){
-        html += "<div class='item border-left border-dark ml-3'><div class='content'><i class='small circle icon point'></i>"+item.address+"</div></div>"
-        
-      });
-      html += "";
-      $('#route').html(html);
-      $('.ui.sidebar.left').sidebar('show');
-      $('#steps').transition('hide');
-      $('#route').transition('show');
-      $('.back').click(function(){
-        $('#route').html('');
-        $('#steps').transition('show');
-        $('#route').transition('hide');
-        $('#header').html('Find route');
-        $('.back').click(function(){
-          $('.ui.sidebar.left').sidebar('toggle');
-        });
-      });
-
-
-    },
-    type: 'routes'
+$.fn.search.settings.templates.routes = function(response) {
+  // do something with response
+  html = '';
+  $.each(response.data, function(index, item) {
+    html+= "<a class='result'><div class='content'><div class='title'><i class='bus icon'></i>  "+item.name+"</div></div></a>";
   });
+    return html;
+  };
+
+$('.ui.search.route')
+.search({
+  apiSettings: {
+    url: 'http://map.test/api/route/search?q={query}'
+  },
+  fields: {
+    results : 'data',
+    title   : 'name',
+    url     : 'html_url'
+  },
+  minCharacters : 1,
+  onSelect: function(result, response){
+    
+    console.log(result);
+    $('#header').html("<i class='bus icon'></i>"+result.name);
+    var html = "";
+    $.each(result.stations, function(index, item){
+      html += "<div class='item border-left border-dark ml-3'><div class='content'><i class='small circle icon point'></i>"+item.address+"</div></div>"
+      
+    });
+    html += "";
+    $('#route').html(html);
+    $('.ui.sidebar.left').sidebar('show');
+    $('#steps').transition('hide');
+    $('#route').transition('show');
+    $(".back").prop("onclick", null).off("click");
+    $('.back').click(function(){
+      $('#route').html('');
+      $('#steps').transition('show');
+      $('#route').transition('hide');
+      $('#header').html('Find route');
+      $('.back').click(function(){
+        $('.ui.sidebar.left').sidebar('toggle');
+      });
+    });
+
+
+  },
+  type: 'routes'
+});
 
   
 
-  var step2 = function(){
+function step2(){
 
-  }
+}
 
+
+
+//map
+
+function initMap(){
+  var options = {
+    zoom: 13,
+    center: {lat: 43.238949, lng: 76.889709}
+  };
+
+  var map = new google.maps.Map(
+    document.getElementById('map'), options );
+  // The marker, positioned at Uluru
+
+}
+  
