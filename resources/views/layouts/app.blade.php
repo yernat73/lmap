@@ -16,7 +16,20 @@
     <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>     
     <script src="{{ asset('js/semantic.min.js') }}"></script>
 </head>
-<body class="">
-    @yield('content')
+<body class="h-100">
+    
+    <div class="ui large top fixed menu">
+        <div class="ui container">
+            <a href="/" class="circular ui icon button p-3 m-2">
+                <i class="angle left icon"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="bg-light h-100 pt-5">
+        <div class="ui container pt-5 h-100">
+            @yield('content')
+        </div>
+    </div>
 </body>
 </html>

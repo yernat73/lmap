@@ -14,6 +14,10 @@ class RouteController extends Controller
         $results =  Route::search($q)->get();
         return RouteResource::collection($results);
     }
+    public function all(Request $request){
+        $routes = Route::all();
+        return RouteResource($route);
+    }
     public function index(Request $request, $id){
         
         $route = Route::find($id);

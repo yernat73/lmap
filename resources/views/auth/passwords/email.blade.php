@@ -1,47 +1,41 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Reset Password') }}</div>
-
-                <div class="card-body">
+    <div class="ui stacked segment mx-auto" style="max-width: 750px">
+        <form class="ui form" method="POST" action="{{ route('password.email') }}">
+            @csrf
+            <div class="row">
+                <div class="col-lg-6 col-md-8 col-sm-10 mx-auto mt-2 mb-4">
+                   
+                    <div class="ui header mt-0">
+                        <div class="content">
+                            {{ __('Reset Password') }}
+                            <div class="sub header">
+                                Please provide a <b>email</b> address.
+                            </div>
+                        </div>
+                        
+                    </div>
                     @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
+                        <div class="ui success visible small message">
+                            <p>{{ session('status') }}</p>
                         </div>
                     @endif
-
-                    <form method="POST" action="{{ route('password.email') }}">
-                        @csrf
-
-                        <div class="form-group row">
-                            <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}" name="email" value="{{ old('email') }}" required>
-
-                                @if ($errors->has('email'))
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $errors->first('email') }}</strong>
-                                    </span>
-                                @endif
-                            </div>
+                    <div class="field {{ $errors->has('email') ? 'error' : '' }}">
+                        <label for="email">E-mail address</label>
+                        <div class="ui left icon input">
+                            <i class="user icon"></i>
+                            <input type="email" name="email" placeholder="E-mail address" value="{{ old('email') }}" required>
                         </div>
-
-                        <div class="form-group row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Send Password Reset Link') }}
-                                </button>
+                        @if ($errors->has('email'))
+                            <div class="ui basic red pointing prompt label">
+                                {{ $errors->first('email') }}
                             </div>
-                        </div>
-                    </form>
+                        @endif
+                    </div>
+                    <button type="submit" class="ui fluid small primary submit button">{{ __('Send Password Reset Link') }}</button>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
-</div>
 @endsection

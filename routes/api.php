@@ -16,10 +16,15 @@ use Illuminate\Http\Request;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::middleware('auth:api')->get('events', 'EventController@index');
+Route::middleware('auth:api')->post('event/new', 'EventController@store');
 
-Route::get('station/search', 'StationController@search');
+Route::middleware('auth:api')->delete('event/delete', 'EventController@delete');
+
+
+Route::get('place/search', 'StationController@search');
 Route::get('route/search', 'RouteController@search');
 Route::get('route/{id}', 'RouteController@index');
-Route::middleware('auth:api')->get('/user', function(Request $request) {
-    return $request->user();
-});
+Route::get('station/{id}', 'StationController@index');
+
+Route::get('directions', 'DirectionController@directions');

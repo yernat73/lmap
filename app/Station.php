@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Station extends Model
 {
+    protected $fillable = [
+        'name', 'lat', 'lng'
+    ];
+
     public function scopeSearch($query, $s){
         return $query->where('address', 'like', '%'.$s.'%');
     }

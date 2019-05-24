@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
+use Illuminate\Auth\Events\Registered;
+
+use Illuminate\Support\Facades\Log;
 
 class RegisterController extends Controller
 {
@@ -68,14 +71,14 @@ class RegisterController extends Controller
     {
         $token = Str::random(60);
 
-        
+
         return User::create([
             'api_token' => hash('sha256', $token),
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            
         ]);
+
     }
 
     public function register(Request $request)
@@ -90,6 +93,8 @@ class RegisterController extends Controller
 
         event(new Registered($user = $this->create($request->all())));
         $this->guard()->login($user);
+        
+        Log::info($user);
         return redirect($this->redirectPath());
     }
 }

@@ -14,7 +14,5 @@
 Route::get('/', function () {
     return view('index');
 });
-Route::get('/logout', '\App\Http\Controllers\Auth\LoginController@logout');
 Auth::routes();
-Route::post('/register','\App\Http\Controllers\Auth\registerController@register');
-
+Route::get('logout', '\App\Http\Controllers\Auth\LoginController@logout');

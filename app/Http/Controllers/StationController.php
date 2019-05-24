@@ -10,15 +10,19 @@ use App\Http\Resources\Station as StationResource;
 
 class StationController extends Controller
 {
-    /*
     
-    public function search(Request $request)
+    
+    public function index($id)
     {
-        $q = request('q');
-        $results = Station::search($q)->get();
-        error_log($results);
-        return $results;
-    }*/
+        $station = Station::all()->find($id);
+        return $station;
+    }
+
+    public function all(){
+        $stations = Station::all();
+        return $stations;
+    }
+
     
     public function search(Request $request){
         $q = request('q');
