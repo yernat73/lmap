@@ -20,350 +20,9 @@ var markers = [];
 var startMarker = null;
 var destinationMarker = null;
 var geocoder = null;
-
-function clearOverlays() {
-  while(markers.length) {
-    markers.pop().setMap(null);
-  }
-  while(polylines.length) {
-    polylines.pop().setMap(null);
-  }
-}
-function clearDirections(){
-  if(startMarker){
-    startMarker.setMap(null);
-    startMarker = null;
-  }
-  if(destinationMarker){
-    destinationMarker.setMap(null);
-    destinationMarker = null;
-  }
-}
-function setStartMarker(){
-  if(start){
-    if(destination){
-      directions();
-    }
-    if(startMarker){
-      startMarker.setPosition(new google.maps.LatLng(start.lat, start.lng));
-      startMarker.setTitle(start.name);
-    }else{
-      startMarker = new google.maps.Marker({
-        position: new google.maps.LatLng(start.lat, start.lng),
-        map: map,
-        icon: {
-          size: new google.maps.Size(15, 15),
-          scaledSize: new google.maps.Size(15, 15),
-          url:'/circle-outline.png'
-        },
-        title: start.name
-      });
-    }
-  }else{
-    if(startMarker){
-      startMarker.setMap(null);
-      startMarker = null;
-    }
-    
-  }
-  
-  
-}
-function setDestinationMarker(callF = true){
-  if(destination){
-    if(start && callF){
-      directions();
-    }
-    if(destinationMarker){
-      destinationMarker.setPosition(new google.maps.LatLng(destination.lat, destination.lng));
-      destinationMarker.setTitle(destination.name);
-    }else{
-      destinationMarker = new google.maps.Marker({
-        position: new google.maps.LatLng(destination.lat, destination.lng),
-        map: map,
-        icon: {
-          size: new google.maps.Size(18, 18),
-          scaledSize: new google.maps.Size(18, 18),
-          url:'/marker.png'
-        },
-        title: destination.name
-      });
-    }
-  }else{
-    if(destinationMarker){
-      destinationMarker.setMap(null);
-      destinationMarker = null;
-    }
-    
-  }
-  
- 
-}
-function back(){
-  clearOverlays();
-  $('#route').html('');
-  $('#steps').transition('show');
-  $('#route').transition('hide');
-  $('#header').html('Find route');
-  $('.back').click(function(){
-    $('.ui.sidebar.left').sidebar('toggle');
-  });
-}
-function directions(){
-  $.ajax({
-    url: "http://map.test/api/directions",
-    type: 'GET',
-    data: { 
-      start: start,
-      destination: destination,
-      
-     },
-    cache: false,
-    success: function(data) {
-      console.log(data);
-    },
-  });
-  createEvent();
-}
-
-function createEvent(){
-  if(auth){
-    $.ajax({
-      url: "http://map.test/api/event/new",
-      type: 'POST',
-      data: { 
-        start: start,
-        destination: destination,
-       },
-      cache: false,
-      success: function(data) {
-        fetchEvents();
-      },
-    });
-  }
-
-}
-
-function deleteEvent(id){
-  if(auth){
-    $.ajax({
-      url: "http://map.test/api/event/delete",
-      type: 'DELETE',
-      data: { 
-        event_id: id
-       },
-      cache: false,
-      success: function(data) {
-        fetchEvents();
-      },
-    });
-  }
-  event.stopPropagation();
-}
-
-function fetchEvents(){
-  $('.ui.dimmer.events').dimmer('show');
-  if(auth){
-    $.ajax({
-      url: "http://map.test/api/events",
-      type: 'GET',
-      cache: false,
-      success: function(data) {
-        
-        var eventsTmp = '';
-        data = data.data;
-        if(data.length == 0){
-          $("#no_events").show();
-        }else{
-          $("#no_events").hide();
-        }
-        var eventTmp = $("#event_template");
-        for(var i = 0 ; i < data.length ; i++){
-          eventsTmp += eventTmp.html();
-
-        }
-        $("#events").html(eventsTmp);
-        var events = document.querySelectorAll('#events .item');
-        for(var i = 0 ; i < events.length ; i++){
-          events[i].id = "event-" + data[i].id;
-          var eventId = events[i].id;
-          $("#"+eventId+" .from").text(data[i].start.name);
-          $("#"+eventId+" .to").text(data[i].destination.name);
-          $("#"+eventId+" .date").text(data[i].date);
-          $("#"+eventId+" .event__delete").on('click', {id: data[i].id}, eventDeleteCall);
-          $("#"+eventId+" .content").on('click',{event: data[i]}, openEvent);
-          
-          
-        }
-
-        function eventDeleteCall(event){
-          deleteEvent(event.data.id);
-        }
-        
-        $('.ui.dimmer.events').dimmer('hide');
-          },
-        });
-  }
-}
-
-function openEvent(event){
-  event = event.data.event;
-
-  document.getElementById("start").value = event.start.name;
-  document.getElementById("destination").value = event.destination.name;
-  start = new Location(event.start.name, event.start.lat, event.start.lng);
-  destination = new Location(event.destination.name, event.destination.lat, event.destination.lng);
-  setStartMarker();
-  setDestinationMarker(false);
-  back();
-  $('.ui.sidebar.left').sidebar('show');
-
-}
-
-
-
-
-$('.ui.sidebar.left').sidebar('setting', 'transition', 'overlay').sidebar('setting', 'dimPage', false);
-
-$('.ui.sidebar.right').sidebar('setting', 'transition', 'overlay').sidebar('setting', 'dimPage', false);
-
-
-$('.left-sidebar-toggle').click(function(){
-  $('.ui.sidebar.left')
-    .sidebar('toggle');
-});
-$('.back').click(function(){
-  $('.ui.sidebar.left')
-  .sidebar('toggle');
-});
-
-$('.right-sidebar-toggle').click(function(){
-  $('.ui.sidebar.right ')
-  .sidebar('toggle')
-;
-});
-$('.dropdown').dropdown({action: 'hide'});
-
-
-
-$('#swap').click(function(){
- if(start || destination){
-  var data1 = document.getElementById("start").value;
-  var data2 = document.getElementById("destination").value;
-  document.getElementById("start").value = data2;
-  document.getElementById("destination").value = data1;
-  var tmp = start;
-  start = destination;
-  destination = tmp;
-  setStartMarker();
-  setDestinationMarker(false);
- }
-});
-
-$('.ui.search.start')
-  .search({
-    apiSettings: {
-      url: 'http://map.test/api/place/search?q={query}'
-    },
-    fields: {
-      results : 'candidates',
-      title   : 'name',
-      url     : 'html_url'
-    },
-    minCharacters : 3,
-    onSelect: function(result, response){
-      start = new Location(result.name, result.geometry.location.lat, result.geometry.location.lng);
-      clearOverlays();
-      setStartMarker();
-    }
-  });
-
-$('.ui.search.destination')
-  .search({
-    apiSettings: {
-      url: 'http://map.test/api/place/search?q={query}'
-    },
-    fields: {
-      results : 'candidates',
-      title   : 'name',
-      url     : 'html_url'
-    },
-    minCharacters : 3,
-    onSelect: function(result, response){
-      destination = new Location(result.name, result.geometry.location.lat, result.geometry.location.lng);
-      
-      clearOverlays();
-      setDestinationMarker();
-     
-    }
-  });
-$.fn.search.settings.templates.routes = function(response) {
-  // do something with response
-  html = '';
-  $.each(response.data, function(index, item) {
-    html+= "<a class='result'><div class='content'><div class='title'><i class='bus icon'></i>  "+item.name+"</div></div></a>";
-  });
-    return html;
-  };
-
-$('.ui.search.route')
-.search({
-  apiSettings: {
-    url: 'http://map.test/api/route/search?q={query}'
-  },
-  fields: {
-    results : 'data',
-    title   : 'name',
-    url     : 'html_url'
-  },
-  minCharacters : 1,
-  onSelect: function(result, response){
-    
-    console.log(result);
-    $('#header').html("<i class='bus icon'></i>"+result.name);
-    var html = "";
-    $.each(result.stations, function(index, item){
-      html += "<div class='item border-left border-dark ml-3'><div class='content'><i class='small circle outline icon point bg-white'></i>"+item.address+"</div></div>"
-    });
-    html += "";
-    displayRoute(result);
-    $('#route').html(html);
-    $('.ui.sidebar.left').sidebar('show');
-    $('#steps').transition('hide');
-    $('#route').transition('show');
-    $(".back").prop("onclick", null).off("click");
-    $('.back').click(function(){
-      back();
-      
-    });
-
-
-  },
-  type: 'routes'
-});
-$('#refresh').on("click", function(){
-  fetchEvents();
-});
-
-$(document).ready(function(){
-  fetchEvents();
-});
-
-$('.message .close')
-  .on('click', function() {
-    $(this)
-      .closest('.message')
-      .transition('fade')
-    ;
-  })
-;
-
-function step2(){
-
-}
-
-
-
+var stations = null;
+var routes = null;
+var stationMarkers = [];
 
 
 //map
@@ -375,14 +34,23 @@ function initMap(){
     center: {lat: 43.238949, lng: 76.889709},
     
     disableDefaultUI: true,
+    styles: [
+      {
+        featureType: 'poi.business',
+        stylers: [{visibility: 'off'}]
+      },
+      {
+        featureType: 'transit',
+        elementType: 'labels.icon',
+        stylers: [{visibility: 'off'}]
+      }
+    ],
     
   };
-  map = new google.maps.Map(document.getElementById('map'), options );
-
-
-  google.maps.event.addListener(
-    map,
-    "rightclick",
+  map = new google.maps.Map(document.getElementById('map'), options );  
+  fetchStations();
+  fetchRoutes();
+  google.maps.event.addListener(map, "rightclick",
     function( event ) {
         if(!$('#contextMenu').transition('is visible')){
           $('#contextMenu').transition();
@@ -444,82 +112,767 @@ function initMap(){
     }
   );
 }
+function getRouteById(id){
+  var routesCount = routes.length;
+  for(var i = 0; i < routesCount; i++){
+    if(routes[i].id == id){
+      return routes[i];
+    }
+  }
+}
 
-function displayRoute(route){
+
+
+function displaySatationInfo(){
+  
   clearOverlays();
   clearDirections();
-  var stationsCount =  route.stations.length;
+  var station = this.station;
+  var routesCount = station.routes.length;
+  var html = '';
+  console.log(station);
+  $('#header').html("<h3> <i class='bus icon'></i>"+ station.address + "</h3>");
+
+  $('#station-routes-count').text(routesCount);
+
+  for(var i = 0; i < routesCount; i++ ){
+    var icon = "";
+    if(station.routes[i].type == "bus"){
+      icon = '<i class="bus icon"></i>';
+    }
+    html += '<div class="link item" id="route-'+station.routes[i].id+'"><div class="content"><div class="header">'+icon + station.routes[i].name+'</div></div></div>';
+  }
+  $('#station .routes').html(html);
+  for(var i = 0; i < routesCount; i++ ){
+    $("#route-"+station.routes[i].id).off().on('click', {route_id: station.routes[i].id}, callDisplayRoute);
+  }
+  function callDisplayRoute(event){
+    displayRoute(getRouteById(event.data.route_id));
+
+  }
+
+ 
+
+  $('#directions').transition('hide');
+  $('#route').transition('hide');
+  
+  $('#option').transition('hide');
+  $('#station').transition('show');
+  $(".back").prop("onclick", null).off("click");
+  $('.back').click(function(){ back(); });
+  $('.ui.sidebar.left').sidebar('show');
+}
+
+
+function displayStations(){
+  var stationsCount = stations.length;
+  var busStationIcon = {
+    scaledSize: new google.maps.Size(15, 15),
+    url:'/bus-station.png',
+    origin: new google.maps.Point(0,0), 
+    anchor: new google.maps.Point(0,0) 
+  };
+  
   for (var i = 0 ; i < stationsCount; i++){
     // 1. Create Marker for each station 
-    markers.push(new google.maps.Marker({
-      position: new google.maps.LatLng(route.stations[i].lat, route.stations[i].lng),
+
+    var marker = new google.maps.Marker({
+      position: stations[i],
       map: null,
-      icon: {
-        size: new google.maps.Size(12, 12),
-        scaledSize: new google.maps.Size(12, 12),
-        url:'/circle.png',
-        origin: new google.maps.Point(0, 0),
-        anchor: new google.maps.Point(0, 12)
-      },
-      title: route.stations[i].address
-    }));
+      icon: busStationIcon,
+      title: stations[i].address
+    });
+    marker.station = stations[i];
+    google.maps.event.addListener(marker, 'click', function() {
+      if($('#contextMenu').transition('is visible')){
+        $('#contextMenu').transition('hide');
+      }
+      displaySatationInfo.call(this);
+    });
+
+
+    stationMarkers.push(marker);
+    var minValue = 14, maxValue = 20;
+
+    google.maps.event.addListener(map, 'zoom_changed', function() {
+      var zoom = map.getZoom();
+        if( zoom > minValue && zoom < maxValue) {
+          for (var i = 0; i < stationMarkers.length; i++) {    
+            stationMarkers[i].setMap(map);
+          }
+        }
+        else {
+          for (var i = 0; i < stationMarkers.length; i++) {    
+            stationMarkers[i].setMap(null);
+          }
+        }
+    });
+
     
   }
-  var minValue = 13, maxValue = 20;
 
-  google.maps.event.addListener(map, 'zoom_changed', function() {
-    var zoom = map.getZoom();
-      if( zoom > minValue && zoom < maxValue) {
-        for (var i = 0; i < markers.length; i++) {    
-          markers[i].setMap(map);
-        }
-      }
-      else {
-        for (var i = 0; i < markers.length; i++) {    
-          markers[i].setMap(null);
-        }
-      }
-  });
+}
 
-
-  for(var i = 0 ; i < stationsCount; i+=2){
-    
-    //Intialize the Direction Service  
+function displayRouteOnMap(route){
+  var service = new google.maps.DirectionsService();
+  var bounds = new google.maps.LatLngBounds();
   
-    var service = new google.maps.DirectionsService();
-    var bounds = new google.maps.LatLngBounds();
+  var stationsCount =  route.stations.length;
+  var src = route.stations[0];
+  var des = route.stations[stationsCount-1];
 
-    if((i+2) < stationsCount){
-      var src = route.stations[i];
-      var des = route.stations[i+2];
-      service.route({
-        origin: src,
-        destination: des,
-        travelMode: google.maps.DirectionsTravelMode.DRIVING
-      }, function(result, status) {
-        if (status == google.maps.DirectionsStatus.OK) {
-          // new path for the next result
-          var path = new google.maps.MVCArray();
-          //Set the Path Stroke Color
-          // new polyline for the next result
-          var poly = new google.maps.Polyline({
-            map: map,
-            strokeColor: '#343a40'
-          });
-          poly.setPath(path);
-          polylines.push(poly);
-          for (var k = 0, len = result.routes[0].overview_path.length; k < len; k++) {
-            path.push(result.routes[0].overview_path[k]);
-            bounds.extend(result.routes[0].overview_path[k]);
-            map.fitBounds(bounds);
-          }
-        } 
-        else alert("Directions Service failed:" + status);
+  var iteration = Math.ceil(stationsCount / 25);
+  var waypts = [];
+  
+  var busRoundIcon = {
+    scaledSize: new google.maps.Size(22, 22),
+    url:'/bus-round.png',
+    origin: new google.maps.Point(0, 0),
+    anchor: new google.maps.Point(11, 11)
+  };
+  
+  var circleIcon = {
+    scaledSize: new google.maps.Size(16, 16),
+    url:'/circle.png',
+    origin: new google.maps.Point(0, 0),
+    anchor: new google.maps.Point(8, 8)
+  };
+  for(var i = 0 ; i < stationsCount-iteration; i+=iteration){
+    waypts.push({
+      location: new google.maps.LatLng(route.stations[i].lat, route.stations[i].lng),
+      stopover: true
+    });
+    
+  }
+
+  service.route(
+    {
+      origin: src,
+      destination: des,
+      travelMode: google.maps.DirectionsTravelMode.DRIVING,
+      waypoints: waypts,
+      optimizeWaypoints: true,
+    }, 
+    function(result, status) {
+      if (status == google.maps.DirectionsStatus.OK) {
+        // new path for the next result
+        var path = new google.maps.MVCArray();
+        //Set the Path Stroke Color
+        // new polyline for the next result
+        
+        var poly = new google.maps.Polyline({
+          map: map,
+          strokeColor: '#343a40',
+          strokeWeight: 7
+        });
+        poly.setPath(path);
+        polylines.push(poly);
+        poly = new google.maps.Polyline({
+          map: map,
+          strokeColor: '#ffffff',
+          strokeWeight: 5
+        });
+        poly.setPath(path);
+        polylines.push(poly);
+        for (var k = 0, len = result.routes[0].overview_path.length; k < len; k++) {
+          path.push(result.routes[0].overview_path[k]);
+          bounds.extend(result.routes[0].overview_path[k]);
+          map.fitBounds(bounds);
+        }
+
+        markers.push(
+          new google.maps.Marker(
+            {
+              position: path.getAt(0),
+              map: map,
+              icon: busRoundIcon,
+              title: route.stations[0].address
+            }
+          ),
+          new google.maps.Marker(
+            {
+              position: path.getAt(path.getLength()-1),
+              map: map,
+              icon: circleIcon,
+              title: route.stations[stationsCount-1].address
+            }
+          )
+      
+        );
+      } 
+      else alert("Directions Service failed:" + status);
+    }
+  );
+}
+
+function displayRoute(route){
+  console.log(route);
+  clearOverlays();
+  clearDirections();
+  $('#header').html("<h3><i class='bus icon'></i>"+route.name+"</h3>");
+  var html = "";
+  $.each(route.stations, function(index, item){
+    html += "<div class='link item border-left border-dark ml-3' id='station-"+item.id+"'><div class='content'><i class='small circle outline icon point bg-white'></i>"+item.address+"</div></div>";
+  });
+  html += "";
+  $('#route').html(html);
+  var size = route.stations.length;
+  for(var i = 0; i < size; i++){
+    $("#station-"+route.stations[i].id).on('click',{lat:route.stations[i].lat, lng:route.stations[i].lng}, function(e){
+      map.setCenter({lat:e.data.lat, lng:e.data.lng});
+      map.setZoom(15);
+    });
+  }
+
+
+
+  $('.ui.sidebar.left').sidebar('show');
+  $('#directions').transition('hide');
+  $('#station').transition('hide');  
+  $('#option').transition('hide');
+  $('#route').transition('show');
+  $(".back").prop("onclick", null).off("click");
+  $('.back').click(function(){ back(); });
+
+  displayRouteOnMap(route);
+} 
+
+function displayWalker(){
+  var  goo = google.maps, directionsService = new goo.DirectionsService, directionsDisplay = new goo.DirectionsRenderer({map:map,});
+      google.maps.Polyline.prototype.setMap=(function(f,r){
+      
+        return function(map){
+          if(
+            this.get('icons')
+              &&
+            this.get('icons').length===1
+              &&
+            this.get('strokeOpacity')===0
+              &&
+            !this.get('noRoute')
+          ){
+            if(r.get('polylineOptions')&& r.get('polylineOptions').strokeColor){
+              
+              var icons=this.get('icons'),
+                  color=r.get('polylineOptions').strokeColor;
+              icons[0].icon.fillOpacity=1;
+              icons[0].icon.fillColor=color;
+              icons[0].icon.strokeColor=color;
+              this.set('icons',icons);
+          }}
+        f.apply(this,arguments);
+      }
+      
+     })(
+          google.maps.Polyline.prototype.setMap,
+          directionsDisplay);
+
+  directionsDisplay.setOptions( { suppressMarkers: true } );
+  
+  directionsService.route({
+    origin: new google.maps.LatLng(start.lat, start.lng),
+    destination: new google.maps.LatLng(destination.lat, destination.lng),
+    travelMode: google.maps.TravelMode.WALKING
+  }, function(response, status) {
+    if (status === google.maps.DirectionsStatus.OK) {
+      directionsDisplay.setDirections(response);
+    } else {
+      window.alert('Directions request failed due to ' + status);
+    }
+  });
+}
+
+function displayOption(option){
+  console.log(option);
+  var html = '';
+  if(option.mode == "walk"){
+
+    displayWalker();
+    html+= '<div class="item"><div class="ui header"> <span>'+millisecondsToStr(option.duration*1000)+'</span> <span class="text-secondary font-weight-light">('+option.distance.toFixed(1) + ' km)</span></div> <div class="extra text-secondary">via '+option.routes[0].summary+'</div></div></div>';
+    html+= '<div class="item"><div class="ui header">'+ option.start.name +' </div></div>';
+
+    
+    
+    var size = option.routes[0].legs[0].steps.length;
+    for(var i = 0 ; i < size; i++){
+      var instructions =  $($.parseHTML("<div>"+ option.routes[0].legs[0].steps[i].html_instructions + "</div>"));
+      var iconText = $($.parseHTML(option.routes[0].legs[0].steps[i].html_instructions)).slice(0,2);
+      console.log(iconText.text());
+      html += "<div class='link item pl-4' id='step-"+i+"'><div class='ui tiny image'> <i class='ui info icon'></i></div> <div class='middle aligned content'><div class='description' style='line-height: 1.3rem!important;'> "+instructions.html()+"</div></div></div>";
+    }
+    html += '<div class="item"><div class="ui header">'+ option.end.name +' </div></div>';
+
+
+  }
+  $("#option").html(html);
+
+
+
+
+
+  $("#header").html($("#summary-template").html());
+  $("#header .from").html(start.name);
+  $("#header .to").html(destination.name);
+  
+  $('#directions').transition('hide');
+  $('#option').transition('show');
+
+  $(".back").prop("onclick", null).off("click");
+  $('.back').click(function(){ back(); });
+}
+
+
+
+function millisecondsToStr (milliseconds) {
+  // TIP: to find current time in milliseconds, use:
+  // var  current_time_milliseconds = new Date().getTime();
+
+  function numberEnding (number) {
+      return (number > 1) ? 's' : '';
+  }
+
+  var temp = Math.floor(milliseconds / 1000);
+  var years = Math.floor(temp / 31536000);
+  if (years) {
+      return years + ' year' + numberEnding(years);
+  }
+  //TODO: Months! Maybe weeks? 
+  var days = Math.floor((temp %= 31536000) / 86400);
+  if (days) {
+      return days + ' day' + numberEnding(days);
+  }
+  var hours = Math.floor((temp %= 86400) / 3600);
+  if (hours) {
+      return hours + ' hour' + numberEnding(hours);
+  }
+  var minutes = Math.floor((temp %= 3600) / 60);
+  if (minutes) {
+      return minutes + ' min.';
+  }
+  return 'less than a second'; //'just now' //or other string you like;
+}
+
+
+
+function clearOverlays() {
+  while(markers.length) {
+    markers.pop().setMap(null);
+  }
+  while(polylines.length) {
+    polylines.pop().setMap(null);
+  }
+}
+function clearDirections(){
+  if(startMarker){
+    startMarker.setMap(null);
+    startMarker = null;
+    start = null;
+    $("#start").val('');
+  }
+  if(destinationMarker){
+    destinationMarker.setMap(null);
+    destinationMarker = null;
+    destination = null;
+    $("#destination").val('');
+  }
+  $("#options").html("");
+}
+function setStartMarker(){
+  var circleOutlineIcon = {
+    scaledSize: new google.maps.Size(15, 15),
+    url:'/circle-outline.png'
+  };
+  
+  if(start){
+    if(destination){
+      directions();
+    }
+    if(startMarker){
+      startMarker.setPosition(new google.maps.LatLng(start.lat, start.lng));
+      startMarker.setTitle(start.name);
+    }else{
+      startMarker = new google.maps.Marker({
+        position: new google.maps.LatLng(start.lat, start.lng),
+        map: map,
+        icon: circleOutlineIcon,
+        title: start.name
       });
+    }
+  }else{
+    if(startMarker){
+      startMarker.setMap(null);
+      startMarker = null;
     }
     
   }
-
-
-} 
   
+  
+}
+function setDestinationMarker(callF = true){
+  var markerIcon = {
+    scaledSize: new google.maps.Size(15, 15),
+    url:'/marker.png'
+  };
+  if(destination){
+    if(start && callF){
+      directions();
+    }
+    if(destinationMarker){
+      destinationMarker.setPosition(new google.maps.LatLng(destination.lat, destination.lng));
+      destinationMarker.setTitle(destination.name);
+    }else{
+      destinationMarker = new google.maps.Marker({
+        position: new google.maps.LatLng(destination.lat, destination.lng),
+        map: map,
+        icon: markerIcon ,
+        title: destination.name
+      });
+    }
+  }else{
+    if(destinationMarker){
+      destinationMarker.setMap(null);
+      destinationMarker = null;
+    }
+    
+  }
+  
+ 
+}
+function back(){
+  clearOverlays();
+  $('#route').html('');
+  $('#directions').transition('show');
+  $('#route').transition('hide');
+  $('#station').transition('hide');
+  $('#header').html('<h3>Find route</h3>');
+  $('.back').click(function(){
+    $('.ui.sidebar.left').sidebar('toggle');
+  });
+}
+
+function optionSelectCall(event){
+  displayOption(event.data.option);
+}
+
+function directions(){
+  $('.ui.dimmer.directions').dimmer('show');
+
+  $.ajax({
+    url: "/api/directions",
+    type: 'GET',
+    data: { 
+      start: start,
+      destination: destination,
+     },
+    cache: false,
+    success: function(data) {
+      console.log(data);
+      var walker = '<i class="fas fa-walking"></i>';
+      var divider = '<i class="right angle icon divider"></i>';
+      var bus = '<i class="bus icon"></i>';
+      var optionsTmp = '';
+      var length = data.options.length;
+      
+      if(length == 0){
+        $("#no_directions .start").html(start.name);
+        $("#no_directions .destination").html(destination.name);
+        $("#no_directions").show();
+      }else{
+        $("#no_directions").hide();
+      }
+      var optionTmp = $("#option-template");
+      for(var i = 0; i < length; i++){
+        optionsTmp += optionTmp.html();
+      }
+      $("#options").html(optionsTmp);
+      var options = document.querySelectorAll('#options .item');
+      for(var i = 0; i < length; i++){
+        options[i].id = "option-"+i;
+        var optionId = options[i].id;
+        if(data.options[i].mode == "transit"){
+          $("#" + optionId +" .two").html(bus);
+          var stepsCount = data.options[i].steps.length;
+          var stepsIcons = '<div class="ui breadcrumb" style="background-color: inherit !important;">';
+          for(var j = 0; j < stepsCount; j++){
+            if(data.options[i].steps[j].mode == "transit"){
+              stepsIcons += '<div class="ui label">'+ bus + data.options[i].steps[j].route.name +'</div>';
+            }
+            else if(data.options[i].steps[j].mode == "walk"){
+              if(data.options[i].steps[j].duration < 60){
+                continue;
+              }
+              stepsIcons += walker;
+            }
+            if(j == stepsCount - 1){
+              break;
+            }
+            stepsIcons += divider;
+          }
+          stepsIcons += '</div>';
+
+          $("#" + optionId +" .summary").html(stepsIcons);
+        }
+        else if(data.options[i].mode == "walk"){
+          $("#" + optionId +" .two").html(walker);
+          $("#" + optionId +" .right").html(millisecondsToStr(data.options[i].duration*1000));
+          $("#" + optionId +" .left").html(data.options[i].distance.toFixed(1) + " km");
+        }
+        $("#"+optionId).on('click', {option: data.options[i]}, optionSelectCall);
+      }
+
+      $('.ui.dimmer.directions').dimmer('hide');
+    },
+  });
+  createEvent();
+  
+  
+}
+function fetchStations(){
+  $.ajax({
+    url: "/api/station/all",
+    type: 'GET',
+    data: { 
+      
+     },
+    cache: false,
+    success: function(data) {
+      stations = data.data;
+      
+      displayStations();
+    },
+  });
+}
+function fetchRoutes(){
+  $.ajax({
+    url: "/api/route/all",
+    type: 'GET',
+    data: { 
+      
+     },
+    cache: false,
+    success: function(data) {
+      routes = data.data;
+    },
+  });
+
+}
+
+
+function createEvent(){
+  if(auth){
+    $.ajax({
+      url: "/api/event/new",
+      type: 'POST',
+      data: { 
+        start: start,
+        destination: destination,
+       },
+      cache: false,
+      success: function(data) {
+        fetchEvents();
+      },
+    });
+  }
+
+}
+
+function deleteEvent(id){
+  if(auth){
+    $.ajax({
+      url: "/api/event/delete",
+      type: 'DELETE',
+      data: { 
+        event_id: id
+       },
+      cache: false,
+      success: function(data) {
+        fetchEvents();
+      },
+    });
+  }
+  event.stopPropagation();
+}
+
+function fetchEvents(){
+  $('.ui.dimmer.events').dimmer('show');
+  if(auth){
+    $.ajax({
+      url: "/api/event/all",
+      type: 'GET',
+      cache: false,
+      success: function(data) {
+        
+        var eventsTmp = '';
+        data = data.data;
+        if(data.length == 0){
+          $("#no_events").show();
+        }else{
+          $("#no_events").hide();
+        }
+        var eventTmp = $("#event_template");
+        for(var i = 0 ; i < data.length ; i++){
+          eventsTmp += eventTmp.html();
+
+        }
+        $("#events").html(eventsTmp);
+        var events = document.querySelectorAll('#events .item');
+        for(var i = 0 ; i < events.length ; i++){
+          events[i].id = "event-" + data[i].id;
+          var eventId = events[i].id;
+          $("#"+eventId+" .from").text(data[i].start.name);
+          $("#"+eventId+" .to").text(data[i].destination.name);
+          $("#"+eventId+" .date").text(data[i].date);
+          $("#"+eventId+" .event__delete").on('click', {id: data[i].id}, eventDeleteCall);
+          $("#"+eventId+" .content").on('click',{event: data[i]}, openEvent);
+          
+        }
+
+        function eventDeleteCall(event){
+          deleteEvent(event.data.id);
+        }
+        
+        $('.ui.dimmer.events').dimmer('hide');
+          },
+        });
+  }
+}
+
+function openEvent(event){
+  event = event.data.event;
+
+  document.getElementById("start").value = event.start.name;
+  document.getElementById("destination").value = event.destination.name;
+  start = new Location(event.start.name, event.start.lat, event.start.lng);
+  destination = new Location(event.destination.name, event.destination.lat, event.destination.lng);
+  setStartMarker();
+  setDestinationMarker(false);
+  back();
+  $('.ui.sidebar.left').sidebar('show');
+
+}
+
+
+$("#no_directions").hide();
+
+$('#route').transition('hide');
+$('#station').transition('hide');
+$('#option').transition('hide');
+
+$('.ui.sidebar.left').sidebar({dimPage: false,closable: false,transition: 'overlay'});
+
+$('.ui.sidebar.right').sidebar({dimPage: false,transition: 'overlay'});
+
+
+$('.left-sidebar-toggle').click(function(){
+  $('.ui.sidebar.left')
+    .sidebar('toggle');
+});
+$('.back').click(function(){
+  $('.ui.sidebar.left')
+  .sidebar('toggle');
+});
+
+$('.right-sidebar-toggle').click(function(){
+  $('.ui.sidebar.right')
+  .sidebar('toggle')
+;
+});
+$('.dropdown').dropdown({action: 'hide'});
+
+
+
+$('#swap').click(function(){
+ if(start || destination){
+  var data1 = document.getElementById("start").value;
+  var data2 = document.getElementById("destination").value;
+  document.getElementById("start").value = data2;
+  document.getElementById("destination").value = data1;
+  var tmp = start;
+  start = destination;
+  destination = tmp;
+  setStartMarker();
+  setDestinationMarker(false);
+ }
+});
+
+$('.ui.search.start')
+  .search({
+    apiSettings: {
+      url: '/api/place/search?q={query}'
+    },
+    fields: {
+      results : 'candidates',
+      title   : 'name',
+      url     : 'html_url'
+    },
+    minCharacters : 3,
+    onSelect: function(result, response){
+      start = new Location(result.name, result.geometry.location.lat, result.geometry.location.lng);
+      clearOverlays();
+      setStartMarker();
+    }
+  });
+
+$('.ui.search.destination')
+  .search({
+    apiSettings: {
+      url: '/api/place/search?q={query}'
+    },
+    fields: {
+      results : 'candidates',
+      title   : 'name',
+      url     : 'html_url'
+    },
+    minCharacters : 3,
+    onSelect: function(result, response){
+      destination = new Location(result.name, result.geometry.location.lat, result.geometry.location.lng);
+      
+      clearOverlays();
+      setDestinationMarker();
+     
+    }
+  });
+$.fn.search.settings.templates.routes = function(response) {
+  // do something with response
+  html = '';
+  $.each(response.data, function(index, item) {
+    html+= "<a class='result'><div class='content'><div class='title'><i class='bus icon'></i>  "+item.name+"</div></div></a>";
+  });
+    return html;
+  };
+
+$('.ui.search.route')
+.search({
+  apiSettings: {
+    url: '/api/route/search?q={query}'
+  },
+  fields: {
+    results : 'data',
+    title   : 'name',
+    url     : 'html_url'
+  },
+  minCharacters : 1,
+  onSelect: function(result, response){
+    displayRoute(result);
+  },
+  type: 'routes'
+});
+$('#refresh').on("click", function(){
+  fetchEvents();
+});
+
+$(document).ready(function(){
+  fetchEvents();
+});
+
+$('.message .close')
+  .on('click', function() {
+    $(this)
+      .closest('.message')
+      .transition('fade')
+    ;
+  })
+;
+
+
+

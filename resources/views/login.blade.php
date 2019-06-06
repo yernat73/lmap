@@ -2,7 +2,7 @@
         <div class="column">
           
           <div class="ui stacked segment mt-3">
-            <form class="ui mini form" method="POST" action="{{ route('login') }}">
+            <form class="ui  form" method="POST" action="{{ route('login') }}">
               @csrf
                 <div class="field {{ $errors->has('email') ? 'error' : '' }}">
                   <div class="ui left icon input ">
@@ -31,20 +31,25 @@
                 <div class="field">
                   <div class="ui checkbox">
                     <input type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                    <label for="remember" style="font-size: .78571429rem !important;">Remember Me</label>
+                    <label for="remember">Remember Me</label>
                   </div>
                 </div>
-                <button type="submit" class="ui primary fluid mini submit button">{{ __('Log in') }}</button>
+                <button type="submit" class="ui primary fluid  submit button">{{ __('Log in') }}</button>
             
         
               
         
             </form>
           </div>
+          <div class="ui  segment bg-white text-center">
+              <a href="{{ route('password.request') }}">
+                  <b>{{ __('Forgot your password?') }}</b> 
+              </a>
+          </div>
           <div class="ui horizontal divider" style="font-size: .78571429rem !important;">or</div>
           
           <div class="ui stacked segment">
-            <form class="ui mini form" method="POST" action="{{ route('register') }}">
+            <form class="ui  form" method="POST" action="{{ route('register') }}">
               @csrf
                 <div class="ui header mt-0">
                   <div class="content">New to us?</div>
@@ -93,15 +98,11 @@
                     <input type="password" name="password_confirmation" placeholder="Confirm password">
                   </div>
                 </div>
-                <button type="submit" class="ui positive fluid mini submit button">Sign up</button>
+                <button type="submit" class="ui positive fluid  submit button">Sign up</button>
           
 
             </form>
           </div>
-          <div class="ui mini segment bg-white text-center">
-              <a href="{{ route('password.request') }}">
-                  <b>{{ __('Forgot your password?') }}</b> 
-              </a>
-          </div>
+         
         </div>
       </div>

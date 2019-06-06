@@ -11,7 +11,7 @@
                         <div class="content">
                             {{ __('Reset Password') }}
                             <div class="sub header">
-                                Please provide a <b>email</b> address.
+                                Please provide an <b>email</b> address.
                             </div>
                         </div>
                         

@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Station extends Model
 {
@@ -18,4 +19,12 @@ class Station extends Model
     {
         return $this->belongsToMany('App\Route')->using('App\RouteStation');
     }
+
+    public static function getByDistance($lat, $lng, $distance)
+    {
+        $results = DB::select(DB::raw('SELECT id, (  6371 * acos( cos( radians(' . $lat . ') ) * cos( radians( lat ) ) * cos( radians( lng ) - radians(' . $lng . ') ) + sin( radians(' . $lat .') ) * sin( radians(lat) ) ) ) AS distance FROM stations HAVING distance < ' . $distance . ' ORDER BY distance') );
+        return $results;
+    }
+
+
 }

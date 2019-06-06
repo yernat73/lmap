@@ -13,7 +13,7 @@
         <link rel="stylesheet" type="text/css" href="{{ asset('css/semantic.min.css') }}">
         
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/components/icon.min.css" integrity="sha256-KyXPF3/VOPPst/NQOzCWr97QMfSfzJLyFT0o5lYJXiQ=" crossorigin="anonymous" />
-        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+
 
         <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>     
         <script src="{{ asset('js/semantic.min.js') }}"></script>
@@ -22,16 +22,27 @@
 
     <body>
         <div class="ui left wide vertical menu sidebar">
-            <div class="item">
+            <div class="item bg-light">
                 <button class="circular ui icon button back">
                     <i class="angle left icon"></i>
                 </button>
-                <h3 id="header">Find route</h3>
+                <div id="header" class="mt-3 mb-2">
+                    <h3>Find route</h3>
+                </div>
+                <div id="summary-template" hidden>
+                    <div class="ui grid container my-2">
+                        <div class="two wide column p-1"><div>from</div></div>
+                        <div class="thirteen wide column p-1"><div class="from ui small header"></div></div>
+                        
+                        <div class="two wide column p-1"><div>to</div></div>
+                        <div class="thirteen wide column p-1"><div class="to ui small header"></div></div>
+                    </div>
+                </div>
             </div>
-            <div id="steps">
-                <div class="ui middle aligned centered grid container" id="step-1">
-                    <div class="row">
-                        <div class="fourteen wide column">
+            <div id="directions">
+                <div class="item">
+                    <div class="ui middle aligned grid" id="step-1">
+                        <div class="fourteen wide column p-0">
                             <div class="item">
                                 <div class="ui search start">
                                     <div class="ui transparent left icon fluid input">
@@ -61,21 +72,64 @@
                         </div>
                     </div>
                 </div>
-                <div id="step-2">
+                <div class="ui inverted dimmer directions">
+                    <div class="ui text loader">Loading</div>
+                    <p></p>
+                    <p></p>
+                </div>
+                
+                <div class="item small lead text-secondary" id="no_directions">
+                    <p><i>Sorry, we could not calculate transit directions from " <span class="start"></span> " to "<span class="destination"></span>"</i></p>
+                </div>
+
+                <div id="option-template" hidden>
+                    <a class="item" href="#">
+                        <div class="ui grid">
+                            <div class="two wide column text-center">
+                            </div>
+                            <div class="fourteen wide column">
+                                <div class="time">
+                                    <span class="left">5:5 - 6:6</span>
+                                    <span class="right" style="float: right">25 min.</span>
+                                </div>
+                                <div class="summary">
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div id="options" class="item p-0">
+                </div>
+
+            </div>
+            <div class="container pr-0">
+                <div id="route"></div>
+            </div>
+            <div id="station">
+                <div class="item border-bottom">
+                    <div class="content">
+                        <div class="header">Routes <span id="station-routes-count" style="float: right"></span></div>
+                    </div>
+                </div>
+                <div class="routes">
                 </div>
             </div>
-            <div class="container">
-                <div id="route"></div>
+
+            <div id="option">
+
             </div>
                 
         </div>
+
+
         <div class="ui right sidebar bg-white">
             <script>
                 var auth = {{Auth::check()? 1 : 0}};
             </script>
             
             @if(Auth::check())
-                <div class="ui small text sticky-top menu bg-white border-bottom p-3 mt-2" style="">
+                <div class="ui small text sticky-top menu bg-white p-3 mt-2 mb-0" style="">
                     <a class="item">
                         {{Auth::user()->name}}
                     </a>
@@ -98,7 +152,6 @@
                         </div>
                         <div class="ui icon mini message" id="no_events">
                             <i class="database icon"></i>
-                            <i class="close icon"></i>
                             <div class="content">
                                 <div class="header">
                                 Your history is empty!
@@ -106,11 +159,11 @@
                                 <p>Start making trips.</p>
                             </div>
                         </div>
-                        <div id="events" class="ui tiny divided selection list">
+                        <div id="events" class="ui tiny selection list mt-1">
                             
                         </div>
                         <div id="event_template" hidden>
-                            <div class="item">
+                            <div class="item my-1">
                                 <div class="right floated content ">
                                     <i class="ui x icon link event__delete"></i>
                                 </div>
@@ -143,15 +196,15 @@
 
         </div>
         <div class="pusher" id="page">
-            <div class="ui container">
+            <div class="">
                 <div class="ui secondary menu">
                     <div class="item">
                         <a class="item left-sidebar-toggle">
                             <i class="grey large sidebar icon mr-0"></i>
                         </a>
                     </div>
-                    <div class="ui search route mx-auto item">
-                        <div class="ui large transparent left icon input">
+                    <div class="ui fluid search route item col-6 col-sm-4 mx-auto " >
+                        <div class="ui large transparent left icon input" >
                             <input class="prompt" type="text" placeholder="Search routes...">
                             <i class="search link icon"></i>
                         </div>
@@ -163,9 +216,6 @@
                             <i class="grey large user outline icon mr-0"></i>
                         </a>
                     </div>
-
-                
-                    
                 </div>
                 
                     

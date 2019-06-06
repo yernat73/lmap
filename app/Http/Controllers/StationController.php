@@ -20,7 +20,7 @@ class StationController extends Controller
 
     public function all(){
         $stations = Station::all();
-        return $stations;
+        return StationResource::collection($stations);
     }
 
     

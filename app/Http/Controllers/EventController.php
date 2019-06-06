@@ -29,7 +29,7 @@ class EventController extends Controller
     }
 
 
-    public function index(){
+    public function all(){
         $events = Auth::user()->events->sortByDesc("updated_at");
         return EventResource::collection($events);
 

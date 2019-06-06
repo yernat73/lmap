@@ -97,4 +97,19 @@ class RegisterController extends Controller
         Log::info($user);
         return redirect($this->redirectPath());
     }
+
+    public function APIregister(Request $request)
+    {
+        $validator = $validator = $this->validator($request->all());;
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'error' => $validator->messages()]);
+        }
+        $name = $request->name;
+        $email    = $request->email;
+        $password = $request->password;
+        $user     = $this->create($request->all());
+        return $user;
+
+    }
 }

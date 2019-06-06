@@ -14,13 +14,14 @@ class RouteController extends Controller
         $results =  Route::search($q)->get();
         return RouteResource::collection($results);
     }
-    public function all(Request $request){
+    public function all(Request $request)
+    {
         $routes = Route::all();
-        return RouteResource($route);
+        return RouteResource::collection($routes);
     }
     public function index(Request $request, $id){
         
         $route = Route::find($id);
-        return $route->stations;
+        return new RouteResource($route);
     }
 }

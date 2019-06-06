@@ -19,7 +19,8 @@ class Station extends JsonResource
             'id' => $this->id,
             'address' => $this->address,
             'lat'=> $this->lat,
-            'lng' => $this->lng
+            'lng' => $this->lng,
+            'routes' => $this->routes
         ];
     }
 }
