@@ -18,6 +18,7 @@ class Route extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'type'=> $this->type,
+            'direction' => $this->direction,
             'stations' => $this->stations()
                                 ->orderBy('route_station.order', 'asc')
                                 ->get()

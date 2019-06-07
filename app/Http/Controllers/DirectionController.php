@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Log;
 use App\Station;
 use App\Route;
 use App\Http\Resources\Route as RouteResource;
+use DateTime;
+use DatePeriod;
+use DateInterval;
 
 class DirectionController extends Controller
 {
@@ -128,6 +131,14 @@ class DirectionController extends Controller
                 $route = Route::find($dr);
                 $startS = null;
                 $endS = null;
+                $route_arrival = new DateTime('NOW');
+                $route_depart = new DateTime('NOW');
+
+                $route_arrival->text = $route_arrival->format('H:i');
+                $route_depart->text = $route_depart->format('H:i');
+
+                $option_arrival = clone $route_arrival;
+                $option_depart = clone $route_depart;
                 foreach($startingStations as $s){
                     $station = $route->stations->find($s->id);
                     if(is_null($station)){
@@ -153,35 +164,43 @@ class DirectionController extends Controller
                 if($startS->pivot->order > $endS->pivot->order || strcmp($startS->address, $endS->address) == 0 ){
                     continue;
                 }
+                $dis = $this->getWalkingDistance($start["lat"], $start["lng"], $startS->lat, $startS->lng);
+                $option["departure_time"] = $option_depart->sub(new DateInterval('PT'.$dis["duration"].'S'));
+                $option["departure_time"]->text = $option["departure_time"]->format('H:i');
                 array_push($steps, array_merge(
                         array(
                             "mode" => "walk",
                             "start" => $start,
                             "end" => $startS
                         ),
-                        $this->getWalkingDistance($start["lat"], $start["lng"], $startS->lat, $startS->lng)
+                        $dis
                     )
                 );
+
                 array_push($steps, array(
                     "mode" => "transit",
                     "start" => $startS,
                     "end" => $endS,
                     "route" => new RouteResource($route),
-                    "departure_time" => date("H:i"),
-                    "arrival_time" => date("H:i")
+                    "departure_time" => $route_depart,
+                    "arrival_time" => $route_arrival,
+                    "duration" => $route_arrival->getTimestamp() - ($route_depart)->getTimestamp() 
                 ));
+                $dis = $this->getWalkingDistance($endS->lat, $endS->lng, $destination["lat"], $destination["lng"]);
                 array_push($steps, array_merge(
                         array(
                             "mode" => "walk",
                             "start" => $endS,
                             "end" => $destination
                         ),
-                        $this->getWalkingDistance($endS->lat, $endS->lng, $destination["lat"], $destination["lng"])
-
+                        $dis                     
                     )
                 );
+                $option["arrival_time"] = $option_arrival->add(new DateInterval('PT'.$dis["duration"].'S'));
+                $option["arrival_time"]->text = $option["arrival_time"]->format('H:i');
                 $option["steps"] = $steps;
                 $option["mode"] = "transit";
+                $option["duration"] = $option["arrival_time"]->getTimestamp() - ($option["departure_time"])->getTimestamp() ;
             }
             if($option){
                 array_push($options, $option);

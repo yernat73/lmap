@@ -11,7 +11,7 @@ class RouteController extends Controller
     public function search(Request $request)
     {
         $q = request('q');
-        $results =  Route::search($q)->get();
+        $results =  Route::where('direction', '0')->search($q)->get();
         return RouteResource::collection($results);
     }
     public function all(Request $request)
@@ -20,7 +20,6 @@ class RouteController extends Controller
         return RouteResource::collection($routes);
     }
     public function index(Request $request, $id){
-        
         $route = Route::find($id);
         return new RouteResource($route);
     }

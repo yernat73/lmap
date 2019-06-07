@@ -167,10 +167,10 @@ function displaySatationInfo(){
 function displayStations(){
   var stationsCount = stations.length;
   var busStationIcon = {
-    scaledSize: new google.maps.Size(15, 15),
+    scaledSize: new google.maps.Size(12, 12),
     url:'/bus-station.png',
     origin: new google.maps.Point(0,0), 
-    anchor: new google.maps.Point(0,0) 
+    anchor: new google.maps.Point(6,6) 
   };
   
   for (var i = 0 ; i < stationsCount; i++){
@@ -213,13 +213,13 @@ function displayStations(){
 
 }
 
-function displayRouteOnMap(route){
+function displayRouteOnMap(route, start, end){
   var service = new google.maps.DirectionsService();
   var bounds = new google.maps.LatLngBounds();
   
-  var stationsCount =  route.stations.length;
-  var src = route.stations[0];
-  var des = route.stations[stationsCount-1];
+  var stationsCount = end.pivot.order - start.pivot.order;
+  var src = start;
+  var des = end;
 
   var iteration = Math.ceil(stationsCount / 25);
   var waypts = [];
@@ -237,7 +237,7 @@ function displayRouteOnMap(route){
     origin: new google.maps.Point(0, 0),
     anchor: new google.maps.Point(8, 8)
   };
-  for(var i = 0 ; i < stationsCount-iteration; i+=iteration){
+  for(var i = start.pivot.order-1 ; i < end.pivot.order-iteration; i+=iteration){
     waypts.push({
       location: new google.maps.LatLng(route.stations[i].lat, route.stations[i].lng),
       stopover: true
@@ -305,6 +305,15 @@ function displayRouteOnMap(route){
   );
 }
 
+function getReversedRoute(id){
+  for(var i = 0 ; i < routes.length; i++){
+    if(routes[i].name == routes[id-1].name && routes[i].direction != routes[id-1].direction){
+      return routes[i];
+    }
+  }
+  return null;
+}
+
 function displayRoute(route){
   console.log(route);
   clearOverlays();
@@ -323,9 +332,17 @@ function displayRoute(route){
       map.setZoom(15);
     });
   }
+  $('#route-direction-change').off().on('click', {id: route.id}, function(e){
+    var reversedRoute = getReversedRoute(e.data.id);
+    if(reversedRoute != null){
+      displayRoute(reversedRoute);
+    }
+  } 
+  );
 
 
-
+  
+  $('#route-direction-change').transition('show');
   $('.ui.sidebar.left').sidebar('show');
   $('#directions').transition('hide');
   $('#station').transition('hide');  
@@ -333,77 +350,117 @@ function displayRoute(route){
   $('#route').transition('show');
   $(".back").prop("onclick", null).off("click");
   $('.back').click(function(){ back(); });
-
-  displayRouteOnMap(route);
+  if(route.stations.length > 0){
+    displayRouteOnMap(route, route.stations[0], route.stations[route.stations.length-1]);
+  }
+  
 } 
 
-function displayWalker(){
-  var  goo = google.maps, directionsService = new goo.DirectionsService, directionsDisplay = new goo.DirectionsRenderer({map:map,});
-      google.maps.Polyline.prototype.setMap=(function(f,r){
-      
-        return function(map){
-          if(
-            this.get('icons')
-              &&
-            this.get('icons').length===1
-              &&
-            this.get('strokeOpacity')===0
-              &&
-            !this.get('noRoute')
-          ){
-            if(r.get('polylineOptions')&& r.get('polylineOptions').strokeColor){
-              
-              var icons=this.get('icons'),
-                  color=r.get('polylineOptions').strokeColor;
-              icons[0].icon.fillOpacity=1;
-              icons[0].icon.fillColor=color;
-              icons[0].icon.strokeColor=color;
-              this.set('icons',icons);
-          }}
-        f.apply(this,arguments);
-      }
-      
-     })(
-          google.maps.Polyline.prototype.setMap,
-          directionsDisplay);
-
-  directionsDisplay.setOptions( { suppressMarkers: true } );
-  
+function displayWalker(ws, wd){
+  var  goo = google.maps, directionsService = new goo.DirectionsService;
+  var lineSymbol = {
+    path: 'M 0,-1 0,1',
+    strokeOpacity: 1,
+    scale: 4
+  };
   directionsService.route({
-    origin: new google.maps.LatLng(start.lat, start.lng),
-    destination: new google.maps.LatLng(destination.lat, destination.lng),
+    origin: new google.maps.LatLng(ws.lat, ws.lng),
+    destination: new google.maps.LatLng(wd.lat, wd.lng),
     travelMode: google.maps.TravelMode.WALKING
   }, function(response, status) {
     if (status === google.maps.DirectionsStatus.OK) {
-      directionsDisplay.setDirections(response);
+      var polyline = new google.maps.Polyline({
+        path: [],
+        strokeColor: '#343a40',
+        strokeOpacity: 0,
+        icons: [{
+          icon: lineSymbol,
+          offset: '0',
+          repeat: '20px'
+        }]
+      });
+      polylines.push(polyline);
+      var bounds = new google.maps.LatLngBounds();
+      
+      
+      var legs = response.routes[0].legs;
+      for (i=0;i<legs.length;i++) {
+        var steps = legs[i].steps;
+        for (j=0;j<steps.length;j++) {
+          var nextSegment = steps[j].path;
+          for (k=0;k<nextSegment.length;k++) {
+            polyline.getPath().push(nextSegment[k]);
+            bounds.extend(nextSegment[k]);
+          }
+        }
+      }
+      
+      polyline.setMap(map);
+      map.fitBounds(bounds);
     } else {
       window.alert('Directions request failed due to ' + status);
     }
   });
 }
 
-function displayOption(option){
+function displayOption(option, id){
   console.log(option);
   var html = '';
   if(option.mode == "walk"){
-
-    displayWalker();
+    displayWalker(start, destination);
     html+= '<div class="item"><div class="ui header"> <span>'+millisecondsToStr(option.duration*1000)+'</span> <span class="text-secondary font-weight-light">('+option.distance.toFixed(1) + ' km)</span></div> <div class="extra text-secondary">via '+option.routes[0].summary+'</div></div></div>';
     html+= '<div class="item"><div class="ui header">'+ option.start.name +' </div></div>';
 
-    
-    
     var size = option.routes[0].legs[0].steps.length;
     for(var i = 0 ; i < size; i++){
-      var instructions =  $($.parseHTML("<div>"+ option.routes[0].legs[0].steps[i].html_instructions + "</div>"));
-      var iconText = $($.parseHTML(option.routes[0].legs[0].steps[i].html_instructions)).slice(0,2);
-      console.log(iconText.text());
-      html += "<div class='link item pl-4' id='step-"+i+"'><div class='ui tiny image'> <i class='ui info icon'></i></div> <div class='middle aligned content'><div class='description' style='line-height: 1.3rem!important;'> "+instructions.html()+"</div></div></div>";
+      var text = $($.parseHTML(option.routes[0].legs[0].steps[i].html_instructions)).slice(0,4);
+      console.log(text);
+      
+      html += "<div class='link item pl-4' id='step-"+i+"'><div class='ui tiny image'> <i class='ui info icon'></i></div> <div class='middle aligned content'><div class='description' style='line-height: 1.3rem!important;'> "+ text.text()+"</div>";
+      html += "<div class='extra text-secondary mt-2'>"+option.routes[0].legs[0].steps[i].distance.text+"</div>"
+      
+      html += " </div></div>";
     }
     html += '<div class="item"><div class="ui header">'+ option.end.name +' </div></div>';
 
 
   }
+  else if (option.mode == "transit"){
+    html += '<div class="item border-bottom"><div class="ui header"> <span>'+option.departure_time.text+' - '+option.arrival_time.text+'</span> <span class="text-secondary font-weight-light"> (' + millisecondsToStr(option.duration*1000)+ ') </span></div> <div class="extra">'+ $('#option-'+id + ' .summary').html()+'</div></div></div>';
+    html += '<div class="p-3"><div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.departure_time.text+'</div><div class="col-1 py-3 px-0"><i class="dot circle outline icon bg-white"></i> <div class="walking-line"> </div></div><div class="col-8 border-bottom p-3"><h4> '+start.name+' </h4> </div></div> </div>';
+
+    var size = option.steps.length;
+    for(var i = 0 ; i < size ; i++){
+      if(option.steps[i].mode == "walk"){
+        html+='<div>';
+        if(option.steps[i].duration <= 100){
+          html += '<div class="content"> <div class="row m-0"><div class="col-3 p-3 text-right"></i></div><div class="col-1 py-3 px-0"><div class="walking-line"></div></div><div class="col-8 p-3"> </div></div> </div>';
+
+        }else{
+          html += '<div class="content"> <div class="row m-0"><div class="col-3 p-3 text-right"><i class="fas fa-walking"></i></div><div class="col-1 py-3 px-0"><div class="walking-line"></div></div><div class="col-8 p-3">Walk <div class="extra text-secondary">About '+millisecondsToStr(option.steps[i].duration * 1000)+', '+option.steps[i].distance.toFixed(1) + ' km </div> </div></div> </div>';
+        
+        }
+        html+='</div>';
+        displayWalker(option.steps[i].start, option.steps[i].end);
+      }
+      else if(option.steps[i].mode == "transit"){
+        html += '<div><div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.steps[i].departure_time.text+'</div><div class="col-1 py-3 px-0"><i class="circle outline icon"></i></div><div class="col-8 p-3 border-bottom"><h4>'+option.steps[i].start.address+'</h4></div></div> </div>';
+        html += '<div class="content"> <div class="row m-0"><div class="col-3 p-3 text-right"><i class="ui small bus icon"></i></div><div class="col-1 py-3 px-0"><div class="transit-line"></div></div><div class="col-8 p-3"><div class="ui label">'+option.steps[i].route.name+'</div> <div class="extra text-secondary">'+ millisecondsToStr(option.steps[i].duration * 1000) +' ('+ (option.steps[i].end.pivot.order-option.steps[i].start.pivot.order) +' stops)</div></div></div> </div>';
+       
+        for(var j = option.steps[i].start.pivot.order ; j < option.steps[i].end.pivot.order-1; j++){
+          html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-right"></div><div class="col-1 py-3 px-0"> <i class="ui small circle outline icon bg-white"></i><div class="transit-line"></div> </div><div class="col-8 p-3">'+option.steps[i].route.stations[j].address+'</div></div> </div>';
+        }
+
+        html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.steps[i].arrival_time.text+'</div><div class="col-1 py-3 px-0"><i class="circle outline icon"></i><div class="walking-line"></div> </div><div class="col-8 p-3 border-bottom"><h4>'+option.steps[i].end.address+'</h4></div></div> </div></div>';
+        displayRouteOnMap(option.steps[i].route, option.steps[i].start, option.steps[i].end );
+      }
+    }
+
+    
+    html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.arrival_time.text+'</div><div class="col-1 py-3 px-0"><i class=" map marker alternate icon"></i> </div><div class="col-8 border-top p-3"><h4> '+destination.name+' </h4> </div></div> </div> </div>';
+
+  }
+
   $("#option").html(html);
 
 
@@ -480,7 +537,9 @@ function clearDirections(){
 function setStartMarker(){
   var circleOutlineIcon = {
     scaledSize: new google.maps.Size(15, 15),
-    url:'/circle-outline.png'
+    url:'/circle-outline.png',
+    origin: new google.maps.Point(0,0), 
+    anchor: new google.maps.Point(7.5, 7.5) 
   };
   
   if(start){
@@ -511,7 +570,7 @@ function setStartMarker(){
 function setDestinationMarker(callF = true){
   var markerIcon = {
     scaledSize: new google.maps.Size(15, 15),
-    url:'/marker.png'
+    url:'/marker.png',
   };
   if(destination){
     if(start && callF){
@@ -544,6 +603,8 @@ function back(){
   $('#directions').transition('show');
   $('#route').transition('hide');
   $('#station').transition('hide');
+  $('#option').transition('hide');
+  $('#route-direction-change').transition('hide');
   $('#header').html('<h3>Find route</h3>');
   $('.back').click(function(){
     $('.ui.sidebar.left').sidebar('toggle');
@@ -551,7 +612,7 @@ function back(){
 }
 
 function optionSelectCall(event){
-  displayOption(event.data.option);
+  displayOption(event.data.option, event.data.id);
 }
 
 function directions(){
@@ -617,7 +678,7 @@ function directions(){
           $("#" + optionId +" .right").html(millisecondsToStr(data.options[i].duration*1000));
           $("#" + optionId +" .left").html(data.options[i].distance.toFixed(1) + " km");
         }
-        $("#"+optionId).on('click', {option: data.options[i]}, optionSelectCall);
+        $("#"+optionId).on('click', {option: data.options[i], id: i}, optionSelectCall);
       }
 
       $('.ui.dimmer.directions').dimmer('hide');
@@ -652,6 +713,7 @@ function fetchRoutes(){
     cache: false,
     success: function(data) {
       routes = data.data;
+      console.log(routes);
     },
   });
 
@@ -757,7 +819,7 @@ $("#no_directions").hide();
 $('#route').transition('hide');
 $('#station').transition('hide');
 $('#option').transition('hide');
-
+$('#route-direction-change').transition('hide');
 $('.ui.sidebar.left').sidebar({dimPage: false,closable: false,transition: 'overlay'});
 
 $('.ui.sidebar.right').sidebar({dimPage: false,transition: 'overlay'});

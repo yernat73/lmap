@@ -26,9 +26,14 @@
                 <button class="circular ui icon button back">
                     <i class="angle left icon"></i>
                 </button>
+                
+                <div class="ui circular icon button" id="route-direction-change">
+                    <i class="ui sync icon"></i>
+                </div>
                 <div id="header" class="mt-3 mb-2">
                     <h3>Find route</h3>
                 </div>
+                
                 <div id="summary-template" hidden>
                     <div class="ui grid container my-2">
                         <div class="two wide column p-1"><div>from</div></div>
@@ -39,6 +44,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="directions">
                 <div class="item">
                     <div class="ui middle aligned grid" id="step-1">
@@ -117,7 +123,6 @@
             </div>
 
             <div id="option">
-
             </div>
                 
         </div>
