@@ -63,49 +63,39 @@ class DirectionController extends Controller
         $totalDistance = $totalDistance / 1000;
         
         //Print out the result.
-        return array(
+        return [
             "distance" => $totalDistance,
             "duration" => $totlaDuration,
             "routes" => $json['routes']
-        );
+        ];
     }
     
 
     public function directions(Request $request)
     {
-        
         $start = $request->get("start");
         $destination = $request->get("destination");
         if(!$start && !$destination){
             return ['meassage' => "BAD REQUEST"];
         }
-        $options = array();
-
+        $options = collect();
         $distanse = $this->getWalkingDistance($start["lat"], $start["lng"], $destination["lat"], $destination["lng"]);
-      
-
         if($distanse["distance"] <= 3){
-            array_push($options, array_merge(
-                array(
+            $options->push(array_merge(
+                [
                     "mode" => "walk",
                     "start" => $start,
                     "end" => $destination
-                ), 
+                ], 
                 $distanse)
             );
         }
-                
-
-
-
-
-
         // All the stations near the DESTINATION
         $destinatingStations = Station::getByDistance($destination["lat"], $destination["lng"], 1);
         // All the stations near the START
         $startingStations = Station::getByDistance($start["lat"], $start["lng"], 1);
         // All the available routes from START
-        $startingRoutes = array();
+        $startingRoutes =[];
         foreach($startingStations as $station){
             $stRoutes = Station::find($station->id)->routes;
             foreach($stRoutes as $route){
@@ -114,7 +104,7 @@ class DirectionController extends Controller
         }
         $startingRoutes = array_unique($startingRoutes);
         // All the available routes to DESTINATION
-        $destinatingRoutes = array();
+        $destinatingRoutes = [];
         foreach($destinatingStations as $station){
             $stRoutes = Station::find($station->id)->routes;
             foreach($stRoutes as $route){
@@ -125,20 +115,13 @@ class DirectionController extends Controller
 
         foreach ($destinatingRoutes as $dr) {
             
-            $option = array();
+            $option = [];
             if(in_array($dr, $startingRoutes)){
-                $steps = array();
+                $steps = [];
                 $route = Route::find($dr);
                 $startS = null;
                 $endS = null;
-                $route_arrival = new DateTime('NOW');
-                $route_depart = new DateTime('NOW');
-
-                $route_arrival->text = $route_arrival->format('H:i');
-                $route_depart->text = $route_depart->format('H:i');
-
-                $option_arrival = clone $route_arrival;
-                $option_depart = clone $route_depart;
+                
                 foreach($startingStations as $s){
                     $station = $route->stations->find($s->id);
                     if(is_null($station)){
@@ -164,20 +147,34 @@ class DirectionController extends Controller
                 if($startS->pivot->order > $endS->pivot->order || strcmp($startS->address, $endS->address) == 0 ){
                     continue;
                 }
+
+                $track = $route->tracks()->first();
+                $route_arrival = new DateTime($track->arrivals()->where("station_id",$endS->id)->first()->arrival_time);
+                $route_depart = new DateTime($track->arrivals()->where("station_id", $startS->id)->first()->arrival_time);
+
+                $route_arrival->text = $route_arrival->format('H:i');
+                $route_depart->text = $route_depart->format('H:i');
+
+                $option_arrival = clone $route_arrival;
+                $option_depart = clone $route_depart;
+
+
+
+
                 $dis = $this->getWalkingDistance($start["lat"], $start["lng"], $startS->lat, $startS->lng);
                 $option["departure_time"] = $option_depart->sub(new DateInterval('PT'.$dis["duration"].'S'));
                 $option["departure_time"]->text = $option["departure_time"]->format('H:i');
                 array_push($steps, array_merge(
-                        array(
+                        [
                             "mode" => "walk",
                             "start" => $start,
                             "end" => $startS
-                        ),
+                        ],
                         $dis
                     )
                 );
 
-                array_push($steps, array(
+                array_push($steps,[
                     "mode" => "transit",
                     "start" => $startS,
                     "end" => $endS,
@@ -185,14 +182,14 @@ class DirectionController extends Controller
                     "departure_time" => $route_depart,
                     "arrival_time" => $route_arrival,
                     "duration" => $route_arrival->getTimestamp() - ($route_depart)->getTimestamp() 
-                ));
+                ]);
                 $dis = $this->getWalkingDistance($endS->lat, $endS->lng, $destination["lat"], $destination["lng"]);
                 array_push($steps, array_merge(
-                        array(
+                        [
                             "mode" => "walk",
                             "start" => $endS,
                             "end" => $destination
-                        ),
+                        ],
                         $dis                     
                     )
                 );
@@ -203,27 +200,14 @@ class DirectionController extends Controller
                 $option["duration"] = $option["arrival_time"]->getTimestamp() - ($option["departure_time"])->getTimestamp() ;
             }
             if($option){
-                array_push($options, $option);
+                $options->push($option);
             }
             
         }
-        
-
-
+        $options = $options->sortBy('duration')->values()->all();
         return [
             "options" => $options,
             'message' => "SUCCESS"
         ];
-
-
-        return [
-            
-            'start' =>$start, 
-            'destination' => $destination,
-            ];
     }
-
-
-
-
 }

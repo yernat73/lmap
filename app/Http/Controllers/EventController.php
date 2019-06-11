@@ -34,7 +34,7 @@ class EventController extends Controller
         return EventResource::collection($events);
 
     }
-
+    
     public function store(Request $request)
     {
         if($this->validator($request->all())->fails()){
@@ -52,12 +52,12 @@ class EventController extends Controller
         $events = $request->user()->events;
         $event = null;
         foreach($events as $e){
-            if(strcmp($e->start["name"], $start["name"]) == 0 && strcmp($e->destination["name"], $destination["name"]) == 0 ){                
+            if( strcmp($e->start["name"], $start["name"]) == 0 && 
+                strcmp($e->destination["name"], $destination["name"]) == 0 ){                
                 $event = $e;
                 break;
             }
         }
-
         if(!is_null($event)){
             $event->touch();            
         }else{
@@ -65,11 +65,9 @@ class EventController extends Controller
             $event->start = $start;
             $event->destination = $destination;
             $event->user_id = $request->user()->id;
-            
         }
         $event->save();
         return new EventResource($event);
-        
     }
 
     public function delete(Request $request){

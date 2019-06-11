@@ -44,7 +44,6 @@
                     </div>
                 </div>
             </div>
-
             <div id="directions">
                 <div class="item">
                     <div class="ui middle aligned grid" id="step-1">

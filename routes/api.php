@@ -31,7 +31,6 @@ Route::post('login', function (Request $request) {
         'code' => 401,
     ], 401);
 });
-
 Route::middleware('auth:api')->post('logout', function (Request $request) {
     
     if (auth()->user()) {
@@ -50,19 +49,11 @@ Route::middleware('auth:api')->post('logout', function (Request $request) {
     ], 401);
 });
 Route::post('register', 'Auth\RegisterController@APIregister');
-
-
-
-
 Route::middleware('auth:api')->get('event/all', 'EventController@all');
 Route::middleware('auth:api')->post('event/new', 'EventController@store');
-
 Route::middleware('auth:api')->delete('event/delete', 'EventController@delete');
-
-
 Route::get('place/search', 'StationController@search');
 Route::get('route/search', 'RouteController@search');
 Route::get('route/all', 'RouteController@all');
 Route::get('station/all', 'StationController@all');
-
 Route::get('directions', 'DirectionController@directions');

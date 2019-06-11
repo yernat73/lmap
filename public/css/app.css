@@ -10702,10 +10702,10 @@ body,.pusher, #map {
   border-left: 4px solid #343a40;
   height: auto;
   position: absolute;
-  top: -17px;
+  top: 14px;
   
   left: 6px;
-  bottom: -17px;
+  bottom: -18px;
   z-index: 2;
   width: 0;
 }

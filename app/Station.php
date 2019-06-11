@@ -26,5 +26,11 @@ class Station extends Model
         return $results;
     }
 
+    public function arrivals()
+    {
+        return $this->hasMany('App\Arrival');
+    }
+
+
 
 }

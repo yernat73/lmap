@@ -18,4 +18,8 @@ class Route extends Model
                             'order'
                         ]);
     }
+    public function tracks()
+    {
+        return $this->hasMany('App\Track');
+    }
 }

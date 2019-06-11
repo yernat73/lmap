@@ -128,27 +128,23 @@ function displaySatationInfo(){
   clearOverlays();
   clearDirections();
   var station = this.station;
-  var routesCount = station.routes.length;
+  var arrivalsCount = station.arrivals.length;
   var html = '';
   console.log(station);
   $('#header').html("<h3> <i class='bus icon'></i>"+ station.address + "</h3>");
 
-  $('#station-routes-count').text(routesCount);
+  $('#station-routes-count').text(arrivalsCount);
 
-  for(var i = 0; i < routesCount; i++ ){
-    var icon = "";
-    if(station.routes[i].type == "bus"){
-      icon = '<i class="bus icon"></i>';
-    }
-    html += '<div class="link item" id="route-'+station.routes[i].id+'"><div class="content"><div class="header">'+icon + station.routes[i].name+'</div></div></div>';
+  for(var i = 0; i < arrivalsCount; i++ ){
+    
+    html += '<div class="link item" id="route-'+station.arrivals[i].track.route_id+'"><div class="row"><div class="col-9"><div class="ui large label ml-2">'+ (getRouteById(station.arrivals[i].track.route_id)).name+'</div></div><div class="col-3 text-success pt-2 text-right">'+station.arrivals[i].arrival_time+'</div></div></div>';
   }
   $('#station .routes').html(html);
-  for(var i = 0; i < routesCount; i++ ){
-    $("#route-"+station.routes[i].id).off().on('click', {route_id: station.routes[i].id}, callDisplayRoute);
+  for(var i = 0; i < arrivalsCount; i++ ){
+    $("#route-"+station.arrivals[i].track.route_id).off().on('click', {route_id: station.arrivals[i].track.route_id}, callDisplayRoute);
   }
   function callDisplayRoute(event){
     displayRoute(getRouteById(event.data.route_id));
-
   }
 
  
@@ -156,6 +152,7 @@ function displaySatationInfo(){
   $('#directions').transition('hide');
   $('#route').transition('hide');
   
+  $('#route-direction-change').transition('hide');
   $('#option').transition('hide');
   $('#station').transition('show');
   $(".back").prop("onclick", null).off("click");
@@ -237,7 +234,7 @@ function displayRouteOnMap(route, start, end){
     origin: new google.maps.Point(0, 0),
     anchor: new google.maps.Point(8, 8)
   };
-  for(var i = start.pivot.order-1 ; i < end.pivot.order-iteration; i+=iteration){
+  for(var i = start.pivot.order ; i < end.pivot.order-iteration; i+=iteration){
     waypts.push({
       location: new google.maps.LatLng(route.stations[i].lat, route.stations[i].lng),
       stopover: true
@@ -321,7 +318,7 @@ function displayRoute(route){
   $('#header').html("<h3><i class='bus icon'></i>"+route.name+"</h3>");
   var html = "";
   $.each(route.stations, function(index, item){
-    html += "<div class='link item border-left border-dark ml-3' id='station-"+item.id+"'><div class='content'><i class='small circle outline icon point bg-white'></i>"+item.address+"</div></div>";
+    html += "<div class='link item border-left border-dark ml-3' id='station-"+item.id+"'><div class='row'><div class='col-8'><i class='small circle outline icon point bg-white'></i>"+item.address+"</div><div class='col-4 text-right text-success'>"+item.arrivals[0].arrival_time+"</div></div></div>";
   });
   html += "";
   $('#route').html(html);
@@ -434,38 +431,34 @@ function displayOption(option, id){
       if(option.steps[i].mode == "walk"){
         html+='<div>';
         if(option.steps[i].duration <= 100){
-          html += '<div class="content"> <div class="row m-0"><div class="col-3 p-3 text-right"></i></div><div class="col-1 py-3 px-0"><div class="walking-line"></div></div><div class="col-8 p-3"> </div></div> </div>';
+          html += '<div class="content"> <div class="row m-0"><div class="col-3 text-right"></i></div><div class="col-1 px-0"><div class="walking-line"></div></div><div class="col-8 border-bottom"> </div></div> </div>';
 
         }else{
-          html += '<div class="content"> <div class="row m-0"><div class="col-3 p-3 text-right"><i class="fas fa-walking"></i></div><div class="col-1 py-3 px-0"><div class="walking-line"></div></div><div class="col-8 p-3">Walk <div class="extra text-secondary">About '+millisecondsToStr(option.steps[i].duration * 1000)+', '+option.steps[i].distance.toFixed(1) + ' km </div> </div></div> </div>';
+          html += '<div class="content"> <div class="row m-0"><div class="col-3 p-3 text-right"><i class="fas fa-walking"></i></div><div class="col-1 py-3 px-0"><div class="walking-line"></div></div><div class="col-8 p-3 border-bottom ">Walk <div class="extra text-secondary">About '+millisecondsToStr(option.steps[i].duration * 1000)+', '+option.steps[i].distance.toFixed(1) + ' km </div> </div></div> </div>';
         
         }
         html+='</div>';
         displayWalker(option.steps[i].start, option.steps[i].end);
       }
       else if(option.steps[i].mode == "transit"){
-        html += '<div><div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.steps[i].departure_time.text+'</div><div class="col-1 py-3 px-0"><i class="circle outline icon"></i></div><div class="col-8 p-3 border-bottom"><h4>'+option.steps[i].start.address+'</h4></div></div> </div>';
+        html += '<div><div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.steps[i].departure_time.text+'</div><div class="col-1 py-3 px-0"><i class="circle outline icon"></i><div class="transit-line"></div>  </div><div class="col-8 p-3 border-bottom"><h4>'+option.steps[i].start.address+'</h4></div></div> </div>';
         html += '<div class="content"> <div class="row m-0"><div class="col-3 p-3 text-right"><i class="ui small bus icon"></i></div><div class="col-1 py-3 px-0"><div class="transit-line"></div></div><div class="col-8 p-3"><div class="ui label">'+option.steps[i].route.name+'</div> <div class="extra text-secondary">'+ millisecondsToStr(option.steps[i].duration * 1000) +' ('+ (option.steps[i].end.pivot.order-option.steps[i].start.pivot.order) +' stops)</div></div></div> </div>';
        
         for(var j = option.steps[i].start.pivot.order ; j < option.steps[i].end.pivot.order-1; j++){
           html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-right"></div><div class="col-1 py-3 px-0"> <i class="ui small circle outline icon bg-white"></i><div class="transit-line"></div> </div><div class="col-8 p-3">'+option.steps[i].route.stations[j].address+'</div></div> </div>';
         }
 
-        html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.steps[i].arrival_time.text+'</div><div class="col-1 py-3 px-0"><i class="circle outline icon"></i><div class="walking-line"></div> </div><div class="col-8 p-3 border-bottom"><h4>'+option.steps[i].end.address+'</h4></div></div> </div></div>';
+        html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.steps[i].arrival_time.text+'</div><div class="col-1 py-3 px-0"><i class="circle outline icon"></i><div class="walking-line"></div> </div><div class="col-8 p-3 border-top"><h4>'+option.steps[i].end.address+'</h4></div></div> </div></div>';
         displayRouteOnMap(option.steps[i].route, option.steps[i].start, option.steps[i].end );
       }
     }
 
     
-    html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.arrival_time.text+'</div><div class="col-1 py-3 px-0"><i class=" map marker alternate icon"></i> </div><div class="col-8 border-top p-3"><h4> '+destination.name+' </h4> </div></div> </div> </div>';
+    html += '<div class="content"><div class="row m-0"><div class="col-3 p-3 text-center">'+option.arrival_time.text+'</div><div class="col-1 py-3 px-0"><i class=" map marker alternate icon"></i> </div><div class="col-8 p-3"><h4> '+destination.name+' </h4> </div></div> </div> </div>';
 
   }
 
   $("#option").html(html);
-
-
-
-
 
   $("#header").html($("#summary-template").html());
   $("#header .from").html(start.name);
@@ -541,7 +534,6 @@ function setStartMarker(){
     origin: new google.maps.Point(0,0), 
     anchor: new google.maps.Point(7.5, 7.5) 
   };
-  
   if(start){
     if(destination){
       directions();
@@ -617,7 +609,6 @@ function optionSelectCall(event){
 
 function directions(){
   $('.ui.dimmer.directions').dimmer('show');
-
   $.ajax({
     url: "/api/directions",
     type: 'GET',
@@ -633,7 +624,6 @@ function directions(){
       var bus = '<i class="bus icon"></i>';
       var optionsTmp = '';
       var length = data.options.length;
-      
       if(length == 0){
         $("#no_directions .start").html(start.name);
         $("#no_directions .destination").html(destination.name);
@@ -670,7 +660,8 @@ function directions(){
             stepsIcons += divider;
           }
           stepsIcons += '</div>';
-
+          $("#" + optionId +" .left").html(data.options[i].departure_time.text + " - " + data.options[i].arrival_time.text);
+          $("#" + optionId +" .right").html(millisecondsToStr(data.options[i].duration*1000));
           $("#" + optionId +" .summary").html(stepsIcons);
         }
         else if(data.options[i].mode == "walk"){
@@ -680,14 +671,13 @@ function directions(){
         }
         $("#"+optionId).on('click', {option: data.options[i], id: i}, optionSelectCall);
       }
-
       $('.ui.dimmer.directions').dimmer('hide');
     },
   });
   createEvent();
-  
-  
 }
+
+
 function fetchStations(){
   $.ajax({
     url: "/api/station/all",
@@ -735,8 +725,8 @@ function createEvent(){
       },
     });
   }
-
 }
+
 
 function deleteEvent(id){
   if(auth){
@@ -755,6 +745,7 @@ function deleteEvent(id){
   event.stopPropagation();
 }
 
+
 function fetchEvents(){
   $('.ui.dimmer.events').dimmer('show');
   if(auth){
@@ -763,7 +754,6 @@ function fetchEvents(){
       type: 'GET',
       cache: false,
       success: function(data) {
-        
         var eventsTmp = '';
         data = data.data;
         if(data.length == 0){
@@ -788,11 +778,9 @@ function fetchEvents(){
           $("#"+eventId+" .content").on('click',{event: data[i]}, openEvent);
           
         }
-
         function eventDeleteCall(event){
           deleteEvent(event.data.id);
         }
-        
         $('.ui.dimmer.events').dimmer('hide');
           },
         });
@@ -801,7 +789,6 @@ function fetchEvents(){
 
 function openEvent(event){
   event = event.data.event;
-
   document.getElementById("start").value = event.start.name;
   document.getElementById("destination").value = event.destination.name;
   start = new Location(event.start.name, event.start.lat, event.start.lng);
@@ -810,7 +797,6 @@ function openEvent(event){
   setDestinationMarker(false);
   back();
   $('.ui.sidebar.left').sidebar('show');
-
 }
 
 

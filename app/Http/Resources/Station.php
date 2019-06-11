@@ -20,7 +20,10 @@ class Station extends JsonResource
             'address' => $this->address,
             'lat'=> $this->lat,
             'lng' => $this->lng,
-            'routes' => $this->routes()->where('direction', '0')->get()
+            'arrivals' => Arrival::collection($this->arrivals),
+            'pivot' => $this->whenPivotLoaded('route_station', function () {
+                return $this->pivot;
+            })
         ];
     }
 }

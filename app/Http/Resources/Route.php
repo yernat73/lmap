@@ -19,9 +19,9 @@ class Route extends JsonResource
             'name' => $this->name,
             'type'=> $this->type,
             'direction' => $this->direction,
-            'stations' => $this->stations()
+            'stations' => Station::collection($this->stations()
                                 ->orderBy('route_station.order', 'asc')
-                                ->get()
+                                ->get())
         ];
     }
 }
